@@ -46,22 +46,27 @@ start_link(Module, Args) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init({Mod, Args}) ->
-    {ok, ModState, Spec} = Mod:init(Args),
-    L0 = ?record_to_tuplelist(state, #state{}),
-    L1 = lists:map(fun({Key, Val}) -> maps:get(Key, Spec, Val) end, L0),
-    State = list_to_tuple([state|L1]),
-    Seq = init_seq(State#state.name),
-    case State#state.sync of
-        true ->
-            PidRef = subscribe(State#state.name),
-            NewState =
-                State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef},
-            loop(NewState, true);
-        false ->
-            NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState},
-            loop(NewState, false)
-    end.
-
+    case Mod:init(Args) of
+        {ok, ModState, Spec} ->
+            L0 = ?record_to_tuplelist(state, #state{}),
+            L1 = lists:map(fun({Key, Val}) -> maps:get(Key, Spec, Val) end, L0),
+            State = list_to_tuple([state|L1]),
+            Seq = init_seq(State#state.name),
+            case State#state.sync of
+                true ->
+                    PidRef = subscribe(State#state.name),
+                    NewState =
+                        State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef},
+                    loop(NewState, true);
+                false ->
+                    NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState},
+                    loop(NewState, false)
+            end;
+        {stop, Reason} ->
+            io:format("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason]),
+            {stop, normal}
+    end.  
+    
 
 loop(State, false) ->
     continue(measure(State));
@@ -116,11 +121,14 @@ measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter}) ->
             end,
             State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
         {ok, Vals=[_|_], Name, From, NewMS} ->
-                %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
-                hera_com:send(Name, Seq, From, Vals),
-                NewIter = case Iter of
-                    infinity -> Iter;
-                    _ -> Iter-1
-                end,
-                State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS}
+            %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
+            hera_com:send(Name, Seq, From, Vals),
+            NewIter = case Iter of
+                infinity -> Iter;
+                _ -> Iter-1
+            end,
+            State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
+        {stop, Reason} ->
+            io:format("[HERA_MEASURE] Stoping because : ~p~n",[Reason]),
+            State#state{seq=Seq+1, iter=0, mod_state=MS}
     end.
