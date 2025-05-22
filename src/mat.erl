@@ -1,5 +1,4 @@
 -module(mat).
-
 -export([tr/1, inv/1]).
 -export(['+'/2, '-'/2, '=='/2, '*'/2, '*´'/2]).
 -export([row/2, col/2, get/3]).
