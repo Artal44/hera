@@ -8,7 +8,7 @@
     stdlib
    ]},
   {env, [{log_data, false}]},
-  {modules, [hera, hera_sup, hera_data, hera_com,
+  {modules, [hera, hera_sup, hera_data, hera_com, hera_subb,
     hera_measure_sup, hera_measure,
     kalman, mat]},
   {licenses, ["Apache 2.0"]},
