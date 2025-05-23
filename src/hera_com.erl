@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send/4, send_unicast/3, add_device/3]).
+-export([send/3, send/4, send_unicast/3, add_device/3, reset_devices/0]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
@@ -80,6 +80,8 @@ decode_half_float(Values) when is_list(Values) -> decode_half_float(Values, []).
 decode_half_float([<<A:8, B:8>> | Rest], Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
 decode_half_float([], Acc) -> Acc.
  
+reset_devices() ->
+    persistent_term:put(devices, []).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,7 +143,7 @@ loop(Socket) ->
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} -> 
-                    %io:format("[HERA_COM] received ~p from ~p~n", [Values, From]),                       
+                    %io:format("[HERA_COM] Received from ~p: ~p ~p ~p~n", [From, Name, Seq, Values]),                      
                     hera_data:store(Name, From, Seq, Values)
             end;
         {send_packet, Packet} ->
