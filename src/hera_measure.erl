@@ -90,7 +90,7 @@ continue(State) ->
 
 
 subscribe(Name) ->
-    {ok, Pid} = hera_subscribe:subscribe(Name),
+    {ok, Pid} = hera_subb:subb(Name),
     Ref = monitor(process, Pid),
     {Pid, Ref}.
 
