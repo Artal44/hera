@@ -1,4 +1,4 @@
--module(hera_subb).
+-module(hera_subscribe).
 
 -behaviour(gen_server).
 
