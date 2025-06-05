@@ -76,15 +76,8 @@ pid_controller_iteration({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Pr
     Dt = T1 - T0,
     Error = Set_point - Input,
 
-    % Anti-windup: reset integral if error is near 0
-    Reset_Threshold = 0.05,
-    Integral_raw = if 
-        erlang:abs(Error) < Reset_Threshold -> 0.0;
-        true -> Integral_error + Error * Dt
-    end,
-
     % Saturate integral if limit set
-    New_Integral_error = saturation(Integral_raw, Int_limit),
+    New_Integral_error = saturation(Integral_error + Error * Dt, Int_limit),
 
     Derivative_error = (Error - Prev_error) / Dt,
 
