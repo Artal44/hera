@@ -72,22 +72,29 @@ pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_
 % Perform a single iteration of the PID controller
 % Computes the control command and sends it to the specified process
 pid_controller_iteration({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Prev_error, T0, Integral_error}, Output_PID) ->
-    T1 = erlang:system_time() * 1.0e-9,
-    Dt = T1 - T0,
-    Error = Set_point - Input,
+  % Get the current system time in seconds
+  T1 = erlang:system_time() * 1.0e-9,
 
-    % Saturate integral if limit set
-    New_Integral_error = saturation(Integral_error + Error * Dt, Int_limit),
+  % Compute the time difference since the last iteration
+  Dt = T1 - T0,
 
-    Derivative_error = (Error - Prev_error) / Dt,
+  % Compute the error between the setpoint and the current input
+  Error = Set_point - Input,
 
-    % Compute PID output and saturate if limit set
-    Unsat_Command = Kp * Error + Ki * New_Integral_error + Kd * Derivative_error,
-    Command = saturation(Unsat_Command, Limit),
+  % Update the integral error with saturation
+  New_Integral_error = saturation(Integral_error + Error * Dt, Int_limit),
 
-    Output_PID ! {self(), {control, Command}},
+  % Compute the derivative of the error
+  Derivative_error = (Error - Prev_error) / Dt,
 
-    pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Error, T1, New_Integral_error}).
+  % Compute the control command with saturation
+  Command = saturation(Kp * Error + Ki * New_Integral_error + Kd * Derivative_error, Limit),
+
+  % Send the control command to the specified process
+  Output_PID ! {self(), {control, Command}},
+
+  % Continue the PID interface process with updated state
+  pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Error, T1, New_Integral_error}).
 
 % Saturation function to limit a value within a specified range
 % Value: The value to be limited
