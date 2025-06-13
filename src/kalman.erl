@@ -2,6 +2,7 @@
 
 -export([kf_predict/3, kf_update/4]).
 -export([kf/6, ekf/6, ekf_control/7]).
+-export([ekf_predict/5, ekf_correct/5]).
 
 %% see https://en.wikipedia.org/wiki/Kalman_filter
 
@@ -127,3 +128,30 @@ ekf_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) ->
     % Update the covariance matrix
     P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
     {X1, P1}.
+
+%% Extended Kalman prediction step with control input
+ekf_predict({X0, P0}, F, Jf, Q, U) ->
+    % Predict state
+    Xp = F(X0, U),
+    % Predict covariance
+    Jfx = Jf(X0),
+    Pp = mat:eval([Jfx, '*', P0, '*´', Jfx, '+', Q]),
+    {Xp, Pp}.
+
+%% Extended Kalman correction step
+ekf_correct({Xp, Pp}, H, Jh, R, Z) ->
+    % Compute Jacobian of observation
+    Jhx = Jh(Xp),
+    % Innovation covariance
+    S = mat:eval([Jhx, '*', Pp, '*´', Jhx, '+', R]),
+    Sinv = mat:inv(S),
+    % Kalman gain
+    K = mat:eval([Pp, '*´', Jhx, '*', Sinv]),
+    % Innovation
+    Y = mat:'-'(Z, H(Xp)),
+    % Corrected state
+    X1 = mat:eval([K, '*', Y, '+', Xp]),
+    % Corrected covariance
+    P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
+    {X1, P1}.
+
