@@ -1,4 +1,4 @@
--module(pid_controller).
+-module(hera_pid_controller).
 
 -export([pid_init/4, pid_init/6]).
 -export([saturation/2, sign/1]).
@@ -31,10 +31,10 @@ pid_init(Kp, Ki, Kd, Limit, Int_limit, Set_Point) ->
 % Main PID interface process
 % Handles incoming messages to update parameters, setpoints, or compute control commands
 pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error}) ->
-  receive
-    % Exit the process
-    {_, {exit}} ->
-      io:format("closed~n");
+	receive
+		%Exit process
+		{_, {exit}} ->
+      hera:logg("[HERA_PID] Exiting~n", []);
 
     % Update proportional gain (Kp)
     {_, {kp, New_Kp}} ->

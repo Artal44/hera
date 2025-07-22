@@ -1,4 +1,4 @@
--module(kalman).
+-module(hera_kalman).
 
 -export([kf_predict/3, kf_update/4]).
 -export([kf/6, ekf/6, ekf_control/7]).
@@ -154,4 +154,3 @@ ekf_correct({Xp, Pp}, H, Jh, R, Z) ->
     % Corrected covariance
     P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
     {X1, P1}.
-
